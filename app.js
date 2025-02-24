@@ -1,12 +1,21 @@
 const express = require("express");
+const logger = require("morgan");
+
 const pizzasArr = require("./data/pizzas.js");
+const PORT = 3000;
 
 const app = express();
 
-const PORT = 3000;
 
-// Make the static files inside of the `public/` folder publicly accessible
+// Config: Setup the request logger to run on each request
+app.use(logger("dev"));
+
+// Config: Make the static files inside of the `public/` folder publicly accessible
 app.use(express.static('public'));
+
+// Config: JSON middleware to parse incoming HTTP requests that contain JSON    // <== ADD
+app.use(express.json()); 
+
 
 
 
@@ -14,7 +23,7 @@ app.use(express.static('public'));
 // Example of a middleware function...
 //
 function customMiddleware1(req, res, next) {
-    console.log("hello world");
+    console.log("example of a custom middleware function...");
     next(); // invoke the next middleware function
 }
 
