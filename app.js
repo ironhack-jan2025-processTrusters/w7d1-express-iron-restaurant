@@ -3,7 +3,6 @@ const logger = require("morgan");
 const mongoose = require("mongoose");
 
 const Pizza = require("./models/Pizza.model.js");
-const pizzasArr = require("./data/pizzas.js");
 
 const PORT = 3000;
 
@@ -24,9 +23,9 @@ app.use(express.json());
 // Connect to DB
 // 
 mongoose
-  .connect("mongodb://127.0.0.1:27017/express-restaurant")
-  .then(x => console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`))
-  .catch(err => console.error("Error connecting to mongo", err));
+    .connect("mongodb://127.0.0.1:27017/express-restaurant")
+    .then(x => console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`))
+    .catch(err => console.error("Error connecting to mongo", err));
 
 
 
@@ -36,7 +35,7 @@ mongoose
 app.get("/", (req, res, next) => {
     // res.send("<h1>this is the homepage</h1>")
     res.sendFile(__dirname + "/views/home.html");
-})
+});
 
 
 //
@@ -51,58 +50,104 @@ app.get("/contact", (req, res, next) => {
 // POST /pizzas
 //
 app.post("/pizzas", (req, res, next) => {
-    
+
     const newPizza = req.body;
 
     Pizza.create(newPizza)
-        .then( pizzaFromDB => {
+        .then(pizzaFromDB => {
             res.status(201).json(pizzaFromDB)
         })
-        .catch( error => {
+        .catch(error => {
             console.log("Error creating a new pizza in the DB...");
             console.log(error);
-            res.status(500).json({error: "Failed to create a new pizza"});
-        })
+            res.status(500).json({ error: "Failed to create a new pizza" });
+        });
 });
+
 
 //
 // GET /pizzas
 // GET /pizzas?maxPrice=15
 //
 app.get("/pizzas", (req, res, next) => {
-    
+
     const { maxPrice } = req.query;
 
-    if (maxPrice === undefined) {
-        res.json(pizzasArr);
-        return;
+    let filter = {}
+
+    if (maxPrice) {
+        filter = { price: { $lte: maxPrice } }
     }
 
-    const filteredPizzas = pizzasArr.filter((pizzaObj) => {
-        return pizzaObj.price <= parseFloat(maxPrice);
-    });
-     
-    res.json(filteredPizzas);
-})
+    Pizza.find(filter)
+        .then((pizzasFromDB) => {
+            res.json(pizzasFromDB)
+        })
+        .catch(error => {
+            console.log("Error getting pizzas from DB...");
+            console.log(error);
+            res.status(500).json({ error: "Failed to get list of pizzas" });
+        });
+});
 
 
 
 //
 // GET /pizzas/:pizzaId
 //
-app.get("/pizzas/:pizzaId", (req, res, next) => {    
+app.get("/pizzas/:pizzaId", (req, res, next) => {
 
-    let { pizzaId } = req.params;
+    const { pizzaId } = req.params;
 
-    pizzaId = parseInt(pizzaId); // convert pizzaId to a number 
-
-    const pizzaDetails = pizzasArr.find((pizzaObj) => {
-        return pizzaObj.id === pizzaId;
-    });
-
-    res.json(pizzaDetails);
+    Pizza.findById(pizzaId)
+        .then(pizzaFromDB => {
+            res.json(pizzaFromDB);
+        })
+        .catch(error => {
+            console.log("Error getting pizza details from DB...");
+            console.log(error);
+            res.status(500).json({ error: "Failed to get pizza details" });
+        });
 });
 
+
+
+//
+// PUT /pizzas/:pizzaId
+//
+app.put("/pizzas/:pizzaId", (req, res, next) => {
+    const { pizzaId } = req.params;
+
+    const newDetails = req.body;
+
+    Pizza.findByIdAndUpdate(pizzaId, newDetails, {new: true})
+        .then(pizzaFromDB => {
+            res.json(pizzaFromDB)
+        })
+        .catch((error) => {
+            console.error("Error updating pizza...");
+            console.error(error);
+            res.status(500).json({ error: "Failed to update a pizza" });
+        });
+});
+
+
+//
+// DELETE /pizzas/:pizzaId
+//
+app.delete("/pizzas/:pizzaId", (req, res) => {
+    const { pizzaId } = req.params;
+
+    Pizza.findByIdAndDelete(pizzaId)
+        .then( response => {
+            res.json(response);
+        })
+        .catch((error) => {
+            console.error("Error deleting pizza...");
+            console.error(error);
+            res.status(500).json({ error: "Failed to delete a pizza" });
+        });
+});
 
 
 
