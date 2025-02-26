@@ -14,7 +14,7 @@ app.use(logger("dev"));
 app.use(express.static('public'));
 
 // Config: JSON middleware to parse incoming HTTP requests that contain JSON    // <== ADD
-app.use(express.json()); 
+app.use(express.json());
 
 
 
@@ -56,10 +56,42 @@ app.get("/contact", (req, res, next) => {
 
 //
 // GET /pizzas
+// GET /pizzas?maxPrice=15
 //
 app.get("/pizzas", (req, res, next) => {
-    res.json(pizzasArr);
+    
+    const { maxPrice } = req.query;
+
+    if (maxPrice === undefined) {
+        res.json(pizzasArr);
+        return;
+    }
+
+    const filteredPizzas = pizzasArr.filter((pizzaObj) => {
+        return pizzaObj.price <= parseFloat(maxPrice);
+    });
+     
+    res.json(filteredPizzas);
 })
+
+
+
+//
+// GET /pizzas/:pizzaId
+//
+app.get("/pizzas/:pizzaId", (req, res, next) => {    
+
+    let { pizzaId } = req.params;
+
+    pizzaId = parseInt(pizzaId); // convert pizzaId to a number 
+
+    const pizzaDetails = pizzasArr.find((pizzaObj) => {
+        return pizzaObj.id === pizzaId;
+    });
+
+    res.json(pizzaDetails);
+});
+
 
 
 
