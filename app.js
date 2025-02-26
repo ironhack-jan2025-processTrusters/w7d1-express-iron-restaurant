@@ -1,7 +1,10 @@
 const express = require("express");
 const logger = require("morgan");
+const mongoose = require("mongoose");
 
+const Pizza = require("./models/Pizza.model.js");
 const pizzasArr = require("./data/pizzas.js");
+
 const PORT = 3000;
 
 const app = express();
@@ -17,24 +20,14 @@ app.use(express.static('public'));
 app.use(express.json());
 
 
+// 
+// Connect to DB
+// 
+mongoose
+  .connect("mongodb://127.0.0.1:27017/express-restaurant")
+  .then(x => console.log(`Connected to Mongo! Database name: "${x.connections[0].name}"`))
+  .catch(err => console.error("Error connecting to mongo", err));
 
-
-//
-// Example of a middleware function...
-//
-function customMiddleware1(req, res, next) {
-    console.log("example of a custom middleware function...");
-    next(); // invoke the next middleware function
-}
-
-app.use(customMiddleware1)
-
-
-
-
-//
-// app.get(path, code)
-//
 
 
 //
@@ -53,6 +46,24 @@ app.get("/contact", (req, res, next) => {
     res.sendFile(__dirname + "/views/contact.html");
 });
 
+
+//
+// POST /pizzas
+//
+app.post("/pizzas", (req, res, next) => {
+    
+    const newPizza = req.body;
+
+    Pizza.create(newPizza)
+        .then( pizzaFromDB => {
+            res.status(201).json(pizzaFromDB)
+        })
+        .catch( error => {
+            console.log("Error creating a new pizza in the DB...");
+            console.log(error);
+            res.status(500).json({error: "Failed to create a new pizza"});
+        })
+});
 
 //
 // GET /pizzas
